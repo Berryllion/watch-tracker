@@ -14,6 +14,16 @@ import { Prisma } from "generated/prisma/client";
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Get("/email-availability/:email")
+  async checkEmailAvailability(@Param("email") email: string) {
+    return this.usersService.isEmailAvailable(email);
+  }
+
+  @Get("/username-availability/:username")
+  async checkUsernameAvailability(@Param("username") username: string) {
+    return this.usersService.isUsernameAvailable(username);
+  }
+
   @Post()
   createUser(@Body() createUserDto: Prisma.UserCreateInput) {
     return this.usersService.create(createUserDto);

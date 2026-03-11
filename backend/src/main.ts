@@ -1,12 +1,9 @@
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
+import { INestApplication } from "@nestjs/common";
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-
-  app.setGlobalPrefix("/api");
-
+function setupSwagger(app: INestApplication) {
   const config = new DocumentBuilder()
     .setTitle("Watch-Tracker")
     .setDescription("Watch-Tracker API")
@@ -14,7 +11,16 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("api", app, document);
+
+  SwaggerModule.setup("swagger", app, document);
+}
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  app.setGlobalPrefix("/api");
+
+  setupSwagger(app);
 
   await app.listen(process.env.PORT ?? 3000);
 }
