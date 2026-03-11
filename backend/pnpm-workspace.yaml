@@ -1,5 +1,11 @@
 allowBuilds:
-  '@nestjs/core': false
-  '@prisma/engines': false
+  "@nestjs/core": false
+  "@prisma/engines": false
   prisma: false
   unrs-resolver: false
+packages:
+  - "apps/*"
+  - "packages/*"
+catalogs:
+  prisma:
+    prisma: latest

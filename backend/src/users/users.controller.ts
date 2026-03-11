@@ -1,26 +1,49 @@
-import { Controller, Param, Body, Post, Put, Get } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from "@nestjs/common";
 import { UsersService } from "./users.service";
-// import { Prisma, User } from "generated/prisma/client";
+import { Prisma } from "generated/prisma/client";
 
 @Controller("users")
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // @Get()
-  // async getAllUsers(): Promise<User[]> {
-  //   return this.usersService.getAllUsers();
-  // }
+  @Post()
+  create(@Body() createUserDto: Prisma.UserCreateInput) {
+    return this.usersService.create(createUserDto);
+  }
 
-  // @Post("/create")
-  // async createUser(@Body() data: Prisma.UserCreateInput): Promise<User> {
-  //   return this.usersService.createUser(data);
-  // }
+  @Get()
+  findAll() {
+    return this.usersService.findAll();
+  }
 
-  // @Put("/update/:id")
-  // async updateUser(
-  //   @Param("id") id: number,
-  //   @Body() data: Prisma.UserUpdateInput,
-  // ): Promise<User> {
-  //   return this.usersService.updateUser(id, data);
-  // }
+  @Get(":id")
+  findOne(@Param("id") id: string) {
+    return this.usersService.findOne(+id);
+  }
+
+  @Get("")
+  findManyWhere(@Body() where: Prisma.UserWhereInput) {
+    return this.usersService.findManyWhere(where);
+  }
+
+  @Patch(":id")
+  update(
+    @Param("id") id: string,
+    @Body() updateUserDto: Prisma.UserUpdateInput,
+  ) {
+    return this.usersService.update(+id, updateUserDto);
+  }
+
+  @Delete(":id")
+  remove(@Param("id") id: string) {
+    return this.usersService.remove(+id);
+  }
 }

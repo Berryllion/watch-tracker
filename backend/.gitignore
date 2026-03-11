@@ -2,7 +2,6 @@
 /dist
 /node_modules
 /build
-/.pnpm-store
 
 # Logs
 logs
@@ -57,3 +56,4 @@ pids
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 /generated/prisma
+/.pnpm-store
