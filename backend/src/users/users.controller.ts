@@ -15,27 +15,27 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  create(@Body() createUserDto: Prisma.UserCreateInput) {
+  createUser(@Body() createUserDto: Prisma.UserCreateInput) {
     return this.usersService.create(createUserDto);
   }
 
   @Get()
-  findAll() {
+  findAllUsers() {
     return this.usersService.findAll();
   }
 
   @Get(":id")
-  findOne(@Param("id") id: string) {
+  findOneUser(@Param("id") id: string) {
     return this.usersService.findOne(+id);
   }
 
   @Get("")
-  findManyWhere(@Body() where: Prisma.UserWhereInput) {
+  findManyWhereUsers(@Body() where: Prisma.UserWhereInput) {
     return this.usersService.findManyWhere(where);
   }
 
   @Patch(":id")
-  update(
+  updateUser(
     @Param("id") id: string,
     @Body() updateUserDto: Prisma.UserUpdateInput,
   ) {
