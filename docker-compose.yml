@@ -1,0 +1,66 @@
+services:
+  frontend:
+    image: node:25-alpine
+    container_name: watch-tracker-frontend
+    working_dir: /app
+    command: sh -c "npm install -g pnpm && pnpm install && pnpm run dev"
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+      - pnpm_store:/root/.local/share/pnpm/store
+    depends_on:
+      - backend
+    networks:
+      - watch-tracker-network
+
+  backend:
+    image: node:25-alpine
+    container_name: watch-tracker-backend
+    working_dir: /app
+    command: sh -c "npm install -g pnpm && pnpm install && pnpm run start:dev"
+    ports:
+      - "3001:3001"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@database:5432/watch_tracker
+      - PORT=3001
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - pnpm_store:/root/.local/share/pnpm/store
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - watch-tracker-network
+
+  database:
+    image: postgres:16-alpine
+    container_name: watch-tracker-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=watch_tracker
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d watch_tracker"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - watch-tracker-network
+
+volumes:
+  postgres_data:
+  pnpm_store:
+
+networks:
+  watch-tracker-network:
+    driver: bridge
