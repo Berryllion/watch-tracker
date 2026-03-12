@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException } from "@nestjs/common";
+import {
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import * as bcrypt from "bcrypt";
 import { Prisma, User } from "generated/prisma/client";
@@ -25,6 +29,17 @@ export class UsersService {
   }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
+    const [isEmailAvailable, isUsernameAvailable] = await Promise.all([
+      this.checkEmailAvailability(createUserDto.email),
+      this.checkUsernameAvailability(createUserDto.username),
+    ]);
+
+    if (!isEmailAvailable) {
+      throw new ConflictException("Email already in use");
+    } else if (!isUsernameAvailable) {
+      throw new ConflictException("Username already in use");
+    }
+
     const salt = this.config.get<number>("BCRYPT_SALT", 10);
     const hashedPassword = await bcrypt
       .hash(createUserDto.password, salt)
@@ -44,6 +59,10 @@ export class UsersService {
 
   findOne(id: number): Promise<User | null> {
     return this.prisma.user.findUnique({ where: { id } });
+  }
+
+  findByEmail(email: string): Promise<User | null> {
+    return this.prisma.user.findUnique({ where: { email } });
   }
 
   findManyWhere(where: Prisma.UserWhereInput): Promise<User[]> {

@@ -5,31 +5,29 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { PrismaService } from "src/prisma/prisma.service";
 import * as bcrypt from "bcrypt";
 import { ConfigService } from "@nestjs/config";
 import ms from "ms";
 import {
   type LoginDto,
-  type TokenPayload,
+  type TokenOptionsPayload,
   type TokenType,
+  type TokensType,
 } from "./authentication.types";
 import { UsersService } from "src/users/users.service";
-import { User } from "generated/prisma/client";
 import { CreateUserDto } from "src/users/users.types";
 
 @Injectable()
 export class AuthenticationService {
   constructor(
     private configService: ConfigService,
-    private prisma: PrismaService,
     private jwtService: JwtService,
     private usersService: UsersService,
   ) {}
 
   private async generateTokenByType(
     tokenType: TokenType,
-    payload: TokenPayload,
+    payload: TokenOptionsPayload,
   ) {
     const secret = this.configService.get<string>(
       `JWT_${tokenType.toUpperCase()}_SECRET`,
@@ -51,36 +49,32 @@ export class AuthenticationService {
     }
   }
 
-  private async generateTokens(
-    payload: TokenPayload,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+  private async issueTokens(payload: TokenOptionsPayload): Promise<TokensType> {
     const [accessToken, refreshToken] = await Promise.all([
       this.generateTokenByType("access", payload),
       this.generateTokenByType("refresh", payload),
     ]);
 
+    await this.usersService
+      .update(payload.id, { refreshToken })
+      .catch((error) => {
+        throw new InternalServerErrorException(
+          "Failed to update refresh token",
+          { cause: error },
+        );
+      });
+
     return { accessToken, refreshToken };
   }
 
-  async register(createUserDto: CreateUserDto): Promise<User> {
-    const [isEmailAvailable, isUsernameAvailable] = await Promise.all([
-      this.usersService.checkEmailAvailability(createUserDto.email),
-      this.usersService.checkUsernameAvailability(createUserDto.username),
-    ]);
+  async register(createUserDto: CreateUserDto): Promise<TokensType> {
+    const user = await this.usersService.create(createUserDto);
 
-    if (!isEmailAvailable) {
-      throw new ConflictException("Email already in use");
-    } else if (!isUsernameAvailable) {
-      throw new ConflictException("Username already in use");
-    }
-
-    return this.usersService.create(createUserDto);
+    return this.issueTokens({ id: user.id, email: user.email });
   }
 
   private async checkCredentials(loginDto: LoginDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: loginDto.email },
-    });
+    const user = await this.usersService.findByEmail(loginDto.email);
 
     if (!user) {
       throw new UnauthorizedException("Invalid credentials");
@@ -107,6 +101,6 @@ export class AuthenticationService {
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const user = await this.checkCredentials(loginDto);
 
-    return this.generateTokens({ email: user.email, id: user.id });
+    return this.issueTokens({ id: user.id, email: user.email });
   }
 }
