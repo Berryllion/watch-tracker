@@ -1,19 +1,34 @@
-import { Controller, Post } from "@nestjs/common";
+import { Body, Controller, HttpCode, Post } from "@nestjs/common";
 import { AuthenticationService } from "./authentication.service";
 import { type LoginDto } from "./authentication.types";
 import { type CreateUserDto } from "src/users/users.types";
+import { Public } from "src/public";
 
 @Controller("authentication")
 export class AuthenticationController {
   constructor(private readonly authenticationService: AuthenticationService) {}
 
+  @Public()
   @Post("login")
-  login(loginDto: LoginDto) {
+  login(@Body() loginDto: LoginDto) {
     return this.authenticationService.login(loginDto);
   }
 
+  @Public()
   @Post("register")
-  register(createUserDto: CreateUserDto) {
+  register(@Body() createUserDto: CreateUserDto) {
     return this.authenticationService.register(createUserDto);
+  }
+
+  @Public()
+  @Post("refresh")
+  refresh(@Body("refreshToken") refreshToken: string) {
+    return this.authenticationService.refresh(refreshToken);
+  }
+
+  @Post("logout")
+  @HttpCode(204)
+  logout(@Body("refreshToken") refreshToken: string) {
+    return this.authenticationService.logout(refreshToken);
   }
 }

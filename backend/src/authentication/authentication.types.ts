@@ -1,8 +1,8 @@
 export type TokenType = "access" | "refresh";
 
-export type TokenOptionsPayload = {
-  email: string;
-  id: number;
+export type JwtPayload = {
+  sub: number;
+  username: string;
 };
 
 export type TokensType = {

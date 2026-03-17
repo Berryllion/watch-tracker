@@ -10,16 +10,19 @@ import {
 import { UsersService } from "./users.service";
 import { Prisma } from "generated/prisma/client";
 import { type CreateUserDto } from "./users.types";
+import { Public } from "src/public";
 
 @Controller("users")
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Public()
   @Get("/email-availability/:email")
   checkEmailAvailability(@Param("email") email: string) {
     return this.usersService.checkEmailAvailability(email);
   }
 
+  @Public()
   @Get("/username-availability/:username")
   checkUsernameAvailability(@Param("username") username: string) {
     return this.usersService.checkUsernameAvailability(username);
@@ -36,12 +39,12 @@ export class UsersController {
   }
 
   @Get(":id")
-  findOneUser(@Param("id") id: string) {
-    return this.usersService.findOne(+id);
+  findUserById(@Param("id") id: string) {
+    return this.usersService.findById(+id);
   }
 
   @Get("")
-  findManyWhereUsers(@Body() where: Prisma.UserWhereInput) {
+  findManyUsersWhere(@Body() where: Prisma.UserWhereInput) {
     return this.usersService.findManyWhere(where);
   }
 
@@ -54,7 +57,7 @@ export class UsersController {
   }
 
   @Delete(":id")
-  remove(@Param("id") id: string) {
+  deleteUser(@Param("id") id: string) {
     return this.usersService.remove(+id);
   }
 }

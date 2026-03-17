@@ -1,5 +1,4 @@
 import {
-  ConflictException,
   Injectable,
   InternalServerErrorException,
   UnauthorizedException,
@@ -10,12 +9,14 @@ import { ConfigService } from "@nestjs/config";
 import ms from "ms";
 import {
   type LoginDto,
-  type TokenOptionsPayload,
+  type JwtPayload,
   type TokenType,
   type TokensType,
 } from "./authentication.types";
 import { UsersService } from "src/users/users.service";
 import { CreateUserDto } from "src/users/users.types";
+import { User } from "generated/prisma/client";
+import { Public } from "src/public";
 
 @Injectable()
 export class AuthenticationService {
@@ -25,10 +26,7 @@ export class AuthenticationService {
     private usersService: UsersService,
   ) {}
 
-  private async generateTokenByType(
-    tokenType: TokenType,
-    payload: TokenOptionsPayload,
-  ) {
+  private async generateTokenByType(tokenType: TokenType, payload: JwtPayload) {
     const secret = this.configService.get<string>(
       `JWT_${tokenType.toUpperCase()}_SECRET`,
     );
@@ -43,26 +41,25 @@ export class AuthenticationService {
       });
     } catch (error) {
       throw new InternalServerErrorException(
-        `Failed to sign ${tokenType} token: `,
+        `Failed to sign ${tokenType} token`,
         { cause: error },
       );
     }
   }
 
-  private async issueTokens(payload: TokenOptionsPayload): Promise<TokensType> {
+  private async issueTokens(id: number, username: string): Promise<TokensType> {
+    const payload = { sub: id, username };
+
     const [accessToken, refreshToken] = await Promise.all([
       this.generateTokenByType("access", payload),
       this.generateTokenByType("refresh", payload),
     ]);
 
-    await this.usersService
-      .update(payload.id, { refreshToken })
-      .catch((error) => {
-        throw new InternalServerErrorException(
-          "Failed to update refresh token",
-          { cause: error },
-        );
+    await this.usersService.update(id, { refreshToken }).catch((error) => {
+      throw new InternalServerErrorException("Failed to update refresh token", {
+        cause: error,
       });
+    });
 
     return { accessToken, refreshToken };
   }
@@ -70,7 +67,7 @@ export class AuthenticationService {
   async register(createUserDto: CreateUserDto): Promise<TokensType> {
     const user = await this.usersService.create(createUserDto);
 
-    return this.issueTokens({ id: user.id, email: user.email });
+    return this.issueTokens(user.id, user.username);
   }
 
   private async checkCredentials(loginDto: LoginDto) {
@@ -83,10 +80,9 @@ export class AuthenticationService {
     const passwordMatch = await bcrypt
       .compare(loginDto.password, user.password)
       .catch((error) => {
-        throw new InternalServerErrorException(
-          "Failed to compare passwords: ",
-          { cause: error },
-        );
+        throw new InternalServerErrorException("Failed to compare passwords", {
+          cause: error,
+        });
       });
 
     if (!passwordMatch) {
@@ -101,6 +97,41 @@ export class AuthenticationService {
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const user = await this.checkCredentials(loginDto);
 
-    return this.issueTokens({ id: user.id, email: user.email });
+    return this.issueTokens(user.id, user.username);
+  }
+
+  async refresh(
+    refreshToken: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const user = await this.verifyRefreshToken(refreshToken);
+
+    return this.issueTokens(user.id, user.username);
+  }
+
+  private async verifyRefreshToken(refreshToken: string): Promise<User> {
+    const decoded = await this.jwtService
+      .verifyAsync(refreshToken, {
+        secret: this.configService.get<string>("JWT_REFRESH_SECRET"),
+      })
+      .catch((error) => {
+        throw new UnauthorizedException("Invalid refresh token", {
+          cause: error,
+        });
+      });
+
+    const user = await this.usersService.findById(decoded.sub);
+
+    if (!user || user.refreshToken !== refreshToken) {
+      throw new UnauthorizedException("Invalid refresh token");
+    }
+
+    return user;
+  }
+
+  @Public()
+  async logout(refreshToken: string) {
+    const user = await this.verifyRefreshToken(refreshToken);
+
+    await this.usersService.update(user.id, { refreshToken: null });
   }
 }
