@@ -1,16 +1,15 @@
 import {
   Controller,
   Get,
-  Post,
   Body,
   Patch,
   Param,
   Delete,
+  ParseIntPipe,
 } from "@nestjs/common";
 import { UsersService } from "./users.service";
-import { Prisma } from "generated/prisma/client";
-import { type CreateUserDto } from "./users.types";
 import { Public } from "src/public";
+import { UpdateUserDto } from "./users.types";
 
 @Controller("users")
 export class UsersController {
@@ -28,36 +27,26 @@ export class UsersController {
     return this.usersService.checkUsernameAvailability(username);
   }
 
-  @Post()
-  createUser(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
-  }
-
   @Get()
   findAllUsers() {
     return this.usersService.findAll();
   }
 
   @Get(":id")
-  findUserById(@Param("id") id: string) {
-    return this.usersService.findById(+id);
-  }
-
-  @Get("")
-  findManyUsersWhere(@Body() where: Prisma.UserWhereInput) {
-    return this.usersService.findManyWhere(where);
+  findUserById(@Param("id", ParseIntPipe) id: number) {
+    return this.usersService.findById(id);
   }
 
   @Patch(":id")
   updateUser(
-    @Param("id") id: string,
-    @Body() updateUserDto: Prisma.UserUpdateInput,
+    @Param("id", ParseIntPipe) id: number,
+    @Body() updateUserDto: UpdateUserDto,
   ) {
-    return this.usersService.update(+id, updateUserDto);
+    return this.usersService.update(id, updateUserDto);
   }
 
   @Delete(":id")
-  deleteUser(@Param("id") id: string) {
-    return this.usersService.remove(+id);
+  deleteUser(@Param("id", ParseIntPipe) id: number) {
+    return this.usersService.remove(id);
   }
 }

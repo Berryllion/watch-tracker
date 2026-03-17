@@ -14,9 +14,7 @@ import {
   type TokensType,
 } from "./authentication.types";
 import { UsersService } from "src/users/users.service";
-import { CreateUserDto } from "src/users/users.types";
-import { User } from "generated/prisma/client";
-import { Public } from "src/public";
+import { CreateUserDto, UserDto } from "src/users/users.types";
 
 @Injectable()
 export class AuthenticationService {
@@ -55,11 +53,16 @@ export class AuthenticationService {
       this.generateTokenByType("refresh", payload),
     ]);
 
-    await this.usersService.update(id, { refreshToken }).catch((error) => {
-      throw new InternalServerErrorException("Failed to update refresh token", {
-        cause: error,
+    await this.usersService
+      .updateRefreshToken(id, refreshToken)
+      .catch((error) => {
+        throw new InternalServerErrorException(
+          "Failed to update refresh token",
+          {
+            cause: error,
+          },
+        );
       });
-    });
 
     return { accessToken, refreshToken };
   }
@@ -71,9 +74,11 @@ export class AuthenticationService {
   }
 
   private async checkCredentials(loginDto: LoginDto) {
-    const user = await this.usersService.findByEmail(loginDto.email);
+    const user = await this.usersService.findByEmailWithSensitiveData(
+      loginDto.email,
+    );
 
-    if (!user) {
+    if (!user || !user.password) {
       throw new UnauthorizedException("Invalid credentials");
     }
 
@@ -89,28 +94,22 @@ export class AuthenticationService {
       throw new UnauthorizedException("Invalid credentials");
     }
 
-    return user;
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+    };
   }
 
-  async login(
-    loginDto: LoginDto,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+  async login(loginDto: LoginDto): Promise<TokensType> {
     const user = await this.checkCredentials(loginDto);
 
     return this.issueTokens(user.id, user.username);
   }
 
-  async refresh(
-    refreshToken: string,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
-    const user = await this.verifyRefreshToken(refreshToken);
-
-    return this.issueTokens(user.id, user.username);
-  }
-
-  private async verifyRefreshToken(refreshToken: string): Promise<User> {
+  private async verifyRefreshToken(refreshToken: string): Promise<UserDto> {
     const decoded = await this.jwtService
-      .verifyAsync(refreshToken, {
+      .verifyAsync<JwtPayload>(refreshToken, {
         secret: this.configService.get<string>("JWT_REFRESH_SECRET"),
       })
       .catch((error) => {
@@ -119,19 +118,28 @@ export class AuthenticationService {
         });
       });
 
-    const user = await this.usersService.findById(decoded.sub);
+    const user = await this.usersService.findByIdWithSensitiveData(decoded.sub);
 
     if (!user || user.refreshToken !== refreshToken) {
       throw new UnauthorizedException("Invalid refresh token");
     }
 
-    return user;
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+    };
   }
 
-  @Public()
-  async logout(refreshToken: string) {
+  async refresh(refreshToken: string): Promise<TokensType> {
     const user = await this.verifyRefreshToken(refreshToken);
 
-    await this.usersService.update(user.id, { refreshToken: null });
+    return this.issueTokens(user.id, user.username);
+  }
+
+  async logout(refreshToken: string): Promise<void> {
+    const user = await this.verifyRefreshToken(refreshToken);
+
+    await this.usersService.updateRefreshToken(user.id, null);
   }
 }

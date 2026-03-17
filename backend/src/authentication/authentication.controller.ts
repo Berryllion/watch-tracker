@@ -1,8 +1,8 @@
 import { Body, Controller, HttpCode, Post } from "@nestjs/common";
 import { AuthenticationService } from "./authentication.service";
 import { type LoginDto } from "./authentication.types";
-import { type CreateUserDto } from "src/users/users.types";
 import { Public } from "src/public";
+import { CreateUserDto } from "src/users/users.types";
 
 @Controller("authentication")
 export class AuthenticationController {
@@ -26,6 +26,7 @@ export class AuthenticationController {
     return this.authenticationService.refresh(refreshToken);
   }
 
+  @Public()
   @Post("logout")
   @HttpCode(204)
   logout(@Body("refreshToken") refreshToken: string) {

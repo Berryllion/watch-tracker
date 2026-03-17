@@ -1,3 +1,5 @@
+import { IsEmail, IsString, MinLength } from "class-validator";
+
 export type TokenType = "access" | "refresh";
 
 export type JwtPayload = {
@@ -10,7 +12,7 @@ export type TokensType = {
   refreshToken: string;
 };
 
-export type LoginDto = {
-  email: string;
-  password: string;
-};
+export class LoginDto {
+  @IsEmail() email: string;
+  @IsString() @MinLength(8) password: string;
+}
