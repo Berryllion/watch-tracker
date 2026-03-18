@@ -2,6 +2,7 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import * as bcrypt from "bcrypt";
@@ -12,6 +13,7 @@ import {
   UserDto,
   UserDtoWithSensitiveData,
 } from "./users.types";
+import { Prisma } from "generated/prisma/client";
 
 @Injectable()
 export class UsersService {
@@ -40,7 +42,8 @@ export class UsersService {
 
   private encryptPassword(password: string): Promise<string> {
     const salt = this.config.get<number>("BCRYPT_SALT", 10);
-    return bcrypt.hash(password, salt);
+
+    return bcrypt.hash(password, Number(salt));
   }
 
   async create(createUserDto: CreateUserDto): Promise<UserDto> {
@@ -91,12 +94,10 @@ export class UsersService {
     });
   }
 
-  async findById(id: number) {
+  async findById(id: number): Promise<UserDto | null> {
     return this.prisma.user.findUnique({
       where: { id },
-      select: {
-        ...this.userSelect,
-      },
+      select: this.userSelect,
     });
   }
 
@@ -121,6 +122,20 @@ export class UsersService {
         select: this.userSelect,
       })
       .catch((error) => {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2002"
+        ) {
+          throw new ConflictException("Email or username already in use");
+        }
+
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2025"
+        ) {
+          throw new NotFoundException(`User with id ${id} not found`);
+        }
+
         throw new InternalServerErrorException("Failed to update user", {
           cause: error,
         });
@@ -147,14 +162,40 @@ export class UsersService {
       },
     );
 
-    return this.prisma.user.update({
-      where: { id },
-      data: { password: hashedPassword },
-      select: this.userSelect,
-    });
+    return this.prisma.user
+      .update({
+        where: { id },
+        data: { password: hashedPassword },
+        select: this.userSelect,
+      })
+      .catch((error) => {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2025"
+        ) {
+          throw new NotFoundException(`User with id ${id} not found`);
+        }
+
+        throw new InternalServerErrorException("Failed to update password", {
+          cause: error,
+        });
+      });
   }
 
   async remove(id: number): Promise<UserDto> {
-    return this.prisma.user.delete({ where: { id }, select: this.userSelect });
+    return this.prisma.user
+      .delete({ where: { id }, select: this.userSelect })
+      .catch((error) => {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2025"
+        ) {
+          throw new NotFoundException(`User with id ${id} not found`);
+        }
+
+        throw new InternalServerErrorException("Failed to delete user", {
+          cause: error,
+        });
+      });
   }
 }

@@ -8,8 +8,8 @@ export class CreateUserDto {
 }
 
 export class UpdateUserDto {
-  @IsOptional() @IsEmail() email: string;
-  @IsOptional() @IsString() @MinLength(3) username: string;
+  @IsOptional() @IsEmail() email?: string;
+  @IsOptional() @IsString() @MinLength(3) username?: string;
 }
 
 export type UserDto = Pick<User, "id" | "username" | "email">;

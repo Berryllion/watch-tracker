@@ -1,23 +1,32 @@
-import { Body, Controller, HttpCode, Post } from "@nestjs/common";
+import { Body, Controller, HttpCode, Post, Req } from "@nestjs/common";
 import { AuthenticationService } from "./authentication.service";
-import { type LoginDto } from "./authentication.types";
 import { Public } from "src/public";
 import { CreateUserDto } from "src/users/users.types";
+import { UseGuards } from "@nestjs/common";
+import { LocalAuthGuard } from "./local-auth.guard";
+import { type AuthenticatedRequest } from "./authentication.types";
 
 @Controller("authentication")
 export class AuthenticationController {
   constructor(private readonly authenticationService: AuthenticationService) {}
 
   @Public()
-  @Post("login")
-  login(@Body() loginDto: LoginDto) {
-    return this.authenticationService.login(loginDto);
-  }
-
-  @Public()
   @Post("register")
   register(@Body() createUserDto: CreateUserDto) {
     return this.authenticationService.register(createUserDto);
+  }
+
+  @Public()
+  @UseGuards(LocalAuthGuard)
+  @Post("login")
+  login(@Req() req: AuthenticatedRequest) {
+    const user = req.user; // set by Passport from validate()
+
+    return this.authenticationService.issueTokens(
+      user.id,
+      user.username,
+      user.email,
+    );
   }
 
   @Public()

@@ -11,7 +11,6 @@ import {
   type LoginDto,
   type JwtPayload,
   type TokenType,
-  type TokensType,
 } from "./authentication.types";
 import { UsersService } from "src/users/users.service";
 import { CreateUserDto, UserDto } from "src/users/users.types";
@@ -45,8 +44,12 @@ export class AuthenticationService {
     }
   }
 
-  private async issueTokens(id: number, username: string): Promise<TokensType> {
-    const payload = { sub: id, username };
+  async issueTokens(
+    id: number,
+    username: string,
+    email: string,
+  ): Promise<{ accessToken: string }> {
+    const payload = { sub: id, username, email };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.generateTokenByType("access", payload),
@@ -64,16 +67,18 @@ export class AuthenticationService {
         );
       });
 
-    return { accessToken, refreshToken };
+    return { accessToken };
   }
 
-  async register(createUserDto: CreateUserDto): Promise<TokensType> {
+  async register(
+    createUserDto: CreateUserDto,
+  ): Promise<{ accessToken: string }> {
     const user = await this.usersService.create(createUserDto);
 
-    return this.issueTokens(user.id, user.username);
+    return this.issueTokens(user.id, user.username, user.email);
   }
 
-  private async checkCredentials(loginDto: LoginDto) {
+  async checkCredentials(loginDto: LoginDto): Promise<UserDto> {
     const user = await this.usersService.findByEmailWithSensitiveData(
       loginDto.email,
     );
@@ -101,12 +106,6 @@ export class AuthenticationService {
     };
   }
 
-  async login(loginDto: LoginDto): Promise<TokensType> {
-    const user = await this.checkCredentials(loginDto);
-
-    return this.issueTokens(user.id, user.username);
-  }
-
   private async verifyRefreshToken(refreshToken: string): Promise<UserDto> {
     const decoded = await this.jwtService
       .verifyAsync<JwtPayload>(refreshToken, {
@@ -131,10 +130,10 @@ export class AuthenticationService {
     };
   }
 
-  async refresh(refreshToken: string): Promise<TokensType> {
+  async refresh(refreshToken: string): Promise<{ accessToken: string }> {
     const user = await this.verifyRefreshToken(refreshToken);
 
-    return this.issueTokens(user.id, user.username);
+    return this.issueTokens(user.id, user.username, user.email);
   }
 
   async logout(refreshToken: string): Promise<void> {
