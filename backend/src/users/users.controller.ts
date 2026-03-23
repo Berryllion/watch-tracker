@@ -41,7 +41,6 @@ export class UsersController {
     @Param("id", ParseIntPipe) id: number,
     @Req() req: AuthenticatedRequest,
   ) {
-    console.log("\n\n", req);
     if (req.user.id !== id) {
       throw new ForbiddenException();
     }
