@@ -1,22 +1,23 @@
 services:
-  # frontend:
-  #   image: node:25-alpine
-  #   container_name: watch-tracker-frontend
-  #   working_dir: /app
-  #   command: sh -c "npm install -g pnpm && pnpm install && pnpm run dev"
-  #   ports:
-  #     - "3000:3000"
-  #   environment:
-  #     - NEXT_PUBLIC_API_URL=http://localhost:3001
-  #   volumes:
-  #     - ./frontend:/app
-  #     - /app/node_modules
-  #     - /app/.next
-  #     - pnpm_store:/root/.local/share/pnpm/store
-  #   depends_on:
-  #     - backend
-  #   networks:
-  #     - watch-tracker-network
+  frontend:
+    image: node:25-alpine
+    container_name: watch-tracker-frontend
+    working_dir: /app
+    command: sh -c "npm install -g pnpm && pnpm install && pnpm run dev"
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+      - /app/.pnpm-store
+      - pnpm_store:/root/.local/share/pnpm/store
+    depends_on:
+      - backend
+    networks:
+      - watch-tracker-network
 
   backend:
     image: node:25-alpine
