@@ -2,6 +2,7 @@
 
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import api from "@/lib/api/client";
 import { useDebounce } from "@/lib/hooks";
 import { EMAIL_PLACEHOLDER, validateEmail } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
@@ -13,11 +14,8 @@ function EmailField() {
 
   const { data: available } = useQuery({
     queryKey: ["email-check", debouncedEmail],
-    queryFn: () =>
-      fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/users/email-availability/${encodeURIComponent(debouncedEmail)}`,
-      ).then((r) => r.json()),
-    enabled: !!debouncedEmail && validateEmail(debouncedEmail),
+    queryFn: () => api.get(`/users/email-availability/${encodeURIComponent(debouncedEmail)}`),
+    enabled: debouncedEmail !== "" && validateEmail(debouncedEmail),
     staleTime: 1000 * 30, // cache result for 30s: same email won't re-check
   });
 
@@ -25,11 +23,13 @@ function EmailField() {
 
   return (
     <Field data-invalid={emailUnavailable}>
-      <FieldLabel>Email</FieldLabel>
+      <FieldLabel htmlFor="email">Email</FieldLabel>
       <Input
         aria-invalid={emailUnavailable}
         type="email"
         placeholder={EMAIL_PLACEHOLDER}
+        id="email"
+        name="email"
         onChange={(e) => setEmail(e.target.value)}
         value={email}
       />

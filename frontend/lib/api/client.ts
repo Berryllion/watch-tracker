@@ -1,14 +1,20 @@
+const BASE_URL = typeof window === "undefined"
+  ? process.env.API_URL              // server-side
+  : process.env.NEXT_PUBLIC_API_URL; // client-side
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const result = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${path}`, {
+  const route = `${BASE_URL}/api${path}`
+
+  const result = await fetch(route, {
     headers: {
       "Content-Type": "application/json",
       ...options?.headers,
     },
     ...options,
-  });
+  })
 
   if (!result.ok) {
-    throw new Error(`API error: ${result.status}`);
+    throw new Error(await result.text())
   }
 
   return result.json();
