@@ -1,7 +1,7 @@
 import {
-  Injectable,
-  InternalServerErrorException,
-  UnauthorizedException,
+    Injectable,
+    InternalServerErrorException,
+    UnauthorizedException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
@@ -10,10 +10,10 @@ import ms from "ms";
 import { UsersService } from "src/users/users.service";
 import { CreateUserDto, UserDto } from "src/users/users.types";
 import {
-  TokensType,
-  type JwtPayload,
-  type LoginDto,
-  type TokenType,
+    TokensType,
+    type JwtPayload,
+    type LoginDto,
+    type TokenType,
 } from "./authentication.types";
 
 @Injectable()
@@ -85,7 +85,7 @@ export class AuthenticationService {
     );
 
     if (!user || !user.password) {
-      throw new UnauthorizedException("Invalid credentials");
+      throw new UnauthorizedException("Invalid credentials.");
     }
 
     const passwordMatch = await bcrypt
@@ -97,7 +97,7 @@ export class AuthenticationService {
       });
 
     if (!passwordMatch) {
-      throw new UnauthorizedException("Invalid credentials");
+      throw new UnauthorizedException("Invalid credentials.");
     }
 
     return {

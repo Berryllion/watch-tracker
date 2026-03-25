@@ -2,7 +2,7 @@
 
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import api from "@/lib/api/client";
+import api from "@/lib/api";
 import { useDebounce } from "@/lib/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
