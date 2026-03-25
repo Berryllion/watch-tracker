@@ -14,13 +14,15 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   })
 
   if (!result.ok) {
-    throw new Error(await result.text())
+    const error = await result.json();
+
+    throw new Error(error.message);
   }
 
   return result.json();
 }
 
-const api = {
+const clientApi = {
   get: <T>(path: string, options?: RequestInit) =>
     request<T>(path, { ...options, method: "GET" }),
 
@@ -42,4 +44,4 @@ const api = {
     request<T>(path, { ...options, method: "DELETE" }),
 };
 
-export default api;
+export default clientApi;
