@@ -1,13 +1,11 @@
 "use client"
 
-import AnimatedTvIcon from "@/components/AnimatedTvIcon";
 import { AlertDestructive } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { EMAIL_PLACEHOLDER, PASSWORD_PLACEHOLDER } from "@/lib/utils";
-import Link from "next/link";
 import { useActionState } from "react";
 import { loginAction } from "./actions";
 
@@ -36,20 +34,7 @@ export function LoginPage({
 
   return (
     <form action={formAction} >
-      <FieldGroup>
-        <div className="flex flex-col items-center gap-2 text-center">
-          <Link
-            href=""
-            className="flex flex-col items-center gap-2 font-medium"
-          >
-            <AnimatedTvIcon />
-            <span className="sr-only">Acme Inc.</span>
-          </Link>
-          <h1 className="text-xl font-bold">Watch Tracker.</h1>
-          <FieldDescription>
-            Don&apos;t have an account? <Link href="register">Sign up</Link>
-          </FieldDescription>
-        </div>
+      <FieldSet>
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
           <Input
@@ -76,7 +61,7 @@ export function LoginPage({
         <FieldDescription>
           {errorAlert}
         </FieldDescription>
-      </FieldGroup>
+      </FieldSet>
     </form>
   );
 }

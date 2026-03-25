@@ -14,7 +14,7 @@ export async function loginAction(_initialState: any, formData: FormData) {
       return error.message
     }
 
-    return "Login failed"
+    return "Login failed."
   }
 
   redirect("/test")
