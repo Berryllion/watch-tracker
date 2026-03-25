@@ -1,10 +1,16 @@
-import { Body, Controller, HttpCode, Post, Req } from "@nestjs/common";
-import { AuthenticationService } from "./authentication.service";
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Post,
+  Req,
+  UseGuards,
+} from "@nestjs/common";
 import { Public } from "src/public";
 import { CreateUserDto } from "src/users/users.types";
-import { UseGuards } from "@nestjs/common";
-import { LocalAuthGuard } from "./local-auth.guard";
+import { AuthenticationService } from "./authentication.service";
 import { type AuthenticatedRequest } from "./authentication.types";
+import { LocalAuthGuard } from "./local-auth.guard";
 
 @Controller("authentication")
 export class AuthenticationController {
@@ -30,9 +36,9 @@ export class AuthenticationController {
   }
 
   @Public()
-  @Post("refresh")
+  @Post("refresh-access-token")
   refresh(@Body("refreshToken") refreshToken: string) {
-    return this.authenticationService.refresh(refreshToken);
+    return this.authenticationService.refreshAccessToken(refreshToken);
   }
 
   @Public()

@@ -3,17 +3,18 @@ import {
   InternalServerErrorException,
   UnauthorizedException,
 } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
-import { ConfigService } from "@nestjs/config";
 import ms from "ms";
-import {
-  type LoginDto,
-  type JwtPayload,
-  type TokenType,
-} from "./authentication.types";
 import { UsersService } from "src/users/users.service";
 import { CreateUserDto, UserDto } from "src/users/users.types";
+import {
+  TokensType,
+  type JwtPayload,
+  type LoginDto,
+  type TokenType,
+} from "./authentication.types";
 
 @Injectable()
 export class AuthenticationService {
@@ -48,7 +49,7 @@ export class AuthenticationService {
     id: number,
     username: string,
     email: string,
-  ): Promise<{ accessToken: string }> {
+  ): Promise<TokensType> {
     const payload = { sub: id, username, email };
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -67,7 +68,7 @@ export class AuthenticationService {
         );
       });
 
-    return { accessToken };
+    return { accessToken, refreshToken };
   }
 
   async register(
@@ -130,10 +131,19 @@ export class AuthenticationService {
     };
   }
 
-  async refresh(refreshToken: string): Promise<{ accessToken: string }> {
+  async refreshAccessToken(
+    refreshToken: string,
+  ): Promise<{ accessToken: string }> {
     const user = await this.verifyRefreshToken(refreshToken);
+    const payload = {
+      sub: user.id,
+      username: user.username,
+      email: user.email,
+    };
 
-    return this.issueTokens(user.id, user.username, user.email);
+    const newAccessToken = await this.generateTokenByType("access", payload);
+
+    return { accessToken: newAccessToken };
   }
 
   async logout(refreshToken: string): Promise<void> {
