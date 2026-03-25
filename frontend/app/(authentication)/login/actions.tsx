@@ -9,8 +9,6 @@ export async function loginAction(_initialState: any, formData: FormData) {
 
   try {
     await login(email, password)
-
-    redirect("/test")
   } catch (error) {
     if (error instanceof Error) {
       return error.message
@@ -18,4 +16,7 @@ export async function loginAction(_initialState: any, formData: FormData) {
 
     return "Login failed"
   }
+
+  redirect("/test")
+
 }

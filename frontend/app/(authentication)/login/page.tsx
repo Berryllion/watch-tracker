@@ -1,9 +1,11 @@
 "use client"
 
 import AnimatedTvIcon from "@/components/AnimatedTvIcon";
+import { AlertDestructive } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import { EMAIL_PLACEHOLDER, PASSWORD_PLACEHOLDER } from "@/lib/utils";
 import Link from "next/link";
 import { useActionState } from "react";
@@ -13,8 +15,25 @@ export function LoginPage({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const [state, formAction, pending] = useActionState(loginAction, null)
-console.log("state:", state)
+  const [error, formAction, pending] = useActionState(loginAction, null)
+
+
+  const submitButton = (
+    <Button type="submit" disabled={pending}>
+      {pending ? <>
+        <Spinner data-icon="inline-start" />
+        <span className="sr-only">Logging in...</span>
+      </> : "Login"}
+    </Button>
+  )
+
+  const loginError = !!error && !pending
+  const errorAlert = (
+    loginError && (
+      <AlertDestructive title="Login failed" description={error} />
+    )
+  )
+
   return (
     <form action={formAction} >
       <FieldGroup>
@@ -52,10 +71,10 @@ console.log("state:", state)
           />
         </Field>
         <Field>
-          <Button type="submit">Login</Button>
+          {submitButton}
         </Field>
         <FieldDescription>
-          {state && state}
+          {errorAlert}
         </FieldDescription>
       </FieldGroup>
     </form>
